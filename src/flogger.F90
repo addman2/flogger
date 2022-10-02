@@ -1,0 +1,248 @@
+module class_Logger
+  implicit none
+  private
+  !
+  ! Class Logger
+  type, public :: Logger
+     integer*4 :: loglvl = 0
+     integer*4, allocatable, dimension(:) :: loglevels
+     character(len=64), allocatable, dimension(:) :: logkeywords
+  contains
+     procedure, public  :: logg          => Logger_log
+     procedure, public  :: setlvl        => Logger_setlvl
+     procedure, public  :: get_logcheck  => Loggerp_check
+  end type Logger
+  !
+  interface get_logcheck
+     module procedure Loggerp_check
+  end interface get_logcheck
+  !
+  interface get_loglevels
+     module procedure Loggerp_get_loglevels
+  end interface get_loglevels
+  !
+  interface get_logkeywords
+     module procedure Loggerp_get_logkeywords
+  end interface get_logkeywords
+  !
+  interface logger
+    module procedure constructor
+  end interface logger
+  !
+contains
+  !
+  ! Class methods
+  !
+  function constructor()
+    !
+    ! Constructor
+    !
+    class(Logger), allocatable :: constructor
+    character(len=1024), dimension(7) :: list
+    !
+    list = [ character(len=1024) ::  "-31 : TEST"&
+                                    ,"10  :       VERBOSITY_LOW "&
+                                    ,"11  :       VERBOSITY_LOW VERBOSITY_MEDIUM"&
+                                    ,"12  :       VERBOSITY_LOW VERBOSITY_MEDIUM VERBOSITY_HIGH"&
+                                    ,"112 : DEBUG VERBOSITY_LOW VERBOSITY_MEDIUM VERBOSITY_HIGH"&
+                                    ,"1012:       VERBOSITY_LOW VERBOSITY_MEDIUM VERBOSITY_HIGH TIME"&
+                                    ,"1112: DEBUG VERBOSITY_LOW VERBOSITY_MEDIUM VERBOSITY_HIGH TIME"]
+    allocate(constructor)
+    !
+    call get_loglevels(list, size(list), constructor%loglevels)
+    call get_logkeywords(list, size(list), constructor%logkeywords)
+    !
+  end function constructor
+  !
+  ! Private methods and module functions
+  !
+  subroutine Loggerp_get_loglevels(list, n, loglevels)
+    implicit none
+    integer*4, allocatable, dimension(:), intent(out) :: loglevels
+    integer*4, intent(in) :: n
+    character(len=1024), dimension(n), intent(in) :: list
+    integer :: ii, ind
+    !
+    allocate(loglevels(n))
+    do ii = 1, n
+      ind = index(list(ii), ":")
+      read(list(ii)(:ind-1), *) loglevels(ii)
+    end do
+  end subroutine Loggerp_get_loglevels
+  !
+  subroutine Loggerp_get_logkeywords(list, n, logkeywords)
+    implicit none
+    character(len=64), allocatable, dimension(:), intent(out) :: logkeywords
+    integer*4, intent(in) :: n
+    character(len=1024), dimension(n), intent(in) :: list
+    integer :: ii, ind
+    !
+    allocate(logkeywords(n))
+    do ii = 1, n
+      ind = index(list(ii), ":")
+      logkeywords(ii) = list(ii)(ind+1:)
+    end do
+  end subroutine Loggerp_get_logkeywords
+  !
+  function Loggerp_check(this, tp) result(answer)
+    implicit none
+    class(Logger), intent(in) :: this
+    character(*), intent(in) :: tp
+    logical :: answer
+    !
+    integer,allocatable, target, dimension(:) :: inds
+    integer*4 :: ind, ii, jj, sz
+    logical :: word = .false.
+    !
+    answer = .false.
+    inds = findloc(this%loglevels, this%loglvl)
+    ind = inds(1)
+    !
+    sz = len(trim(this%logkeywords(ind)))
+    jj = 1
+    do ii = 1, sz
+      if (word) then
+        if ((this%logkeywords(ind)(ii:ii).eq." ").or.(ii.eq.sz)) then
+          if (trim(tp).eq.trim(this%logkeywords(ind)(jj:ii))) then
+            answer = .true.
+          end if
+          word = .false.
+        end if
+      else
+        if (this%logkeywords(ind)(ii:ii).ne." ") then
+          jj = ii
+          word = .true.
+        end if
+      end if
+    end do
+    !
+  end function Loggerp_check
+  !
+  subroutine Logger_log(this, tp, msg, rank)
+    implicit none
+    class(Logger), intent(in) :: this
+    character(*) :: tp
+    character(len=*) :: msg
+    integer*4 :: rank
+
+    if (rank.ne.0) then
+        return
+    end if
+
+    if (.not.this%get_logcheck(tp)) then
+        return
+    end if
+
+    print *, msg
+  end subroutine Logger_log
+  !
+  subroutine Logger_setlvl(this, lvl)
+    ! Log level setter
+    class(Logger), intent(inout) :: this
+    integer*4 :: lvl
+    this%loglvl = lvl
+  end subroutine Logger_setlvl
+end module class_Logger
+
+module logging
+  use class_Logger
+  implicit none
+  private :: int2str, real2str
+  interface operator(//)
+    module procedure int2str, real2str, reald2str, logical2str
+  end interface
+  interface operator(**)
+    module procedure fmt_int, fmt_real, fmt_reald, fmt_realdd
+  end interface
+  !
+contains
+  !
+  function int2str( x, y ) result(res)
+    character(*), intent(in)  :: x
+    integer*4, intent(in)     :: y
+    character(:), allocatable :: res
+
+    character(len=30) ret
+    write ( ret, * ) y
+    res = x // trim(adjustL( ret ))
+  end
+  !
+  function real2str( x, y ) result(res)
+    character(*), intent(in)  :: x
+    real*4, intent(in)        :: y
+    character(:), allocatable :: res
+
+    character(len=30) ret
+    write ( ret, * ) y
+    res = x // trim(adjustL( ret ))
+  end
+  !
+  function reald2str( x, y ) result(res)
+    character(*), intent(in)  :: x
+    real*8, intent(in)        :: y
+    character(:), allocatable :: res
+
+    character(len=30) ret
+    write ( ret, * ) y
+    res = x // trim(adjustL( ret ))
+  end
+  !
+  function logical2str( x, y ) result(res)
+    character(*), intent(in)  :: x
+    logical*4, intent(in)     :: y
+    character(:), allocatable :: res
+
+    character(len=30) ret
+    if (y) then
+      write ( ret, * ) ' True'
+    else
+      write ( ret, * ) ' False'
+    end if
+    res = x // trim(adjustL( ret ))
+  end
+  !
+  function fmt_int( x, y ) result(res)
+    integer, intent(in)     :: x
+    character(*), intent(in)  :: y
+    character(:), allocatable :: res
+
+    character(len=30) ret
+    write ( ret, '(A,'//y//')' ) "|", x
+    res = trim(adjustL( ret ))
+    res = res(2:)
+  end
+  !
+  function fmt_real( x, y ) result(res)
+    real*4, intent(in)        :: x
+    character(*), intent(in)  :: y
+    character(:), allocatable :: res
+
+    character(len=30) ret
+    write ( ret, '(A,'//y//')' ) "|", x
+    res = trim(adjustL( ret ))
+    res = res(2:)
+  end
+  !
+  function fmt_reald( x, y ) result(res)
+    real*8, intent(in)        :: x
+    character(*), intent(in)  :: y
+    character(:), allocatable :: res
+
+    character(len=30) ret
+    write ( ret, '(A,'//y//')' ) "|", x
+    res = trim(adjustL( ret ))
+    res = res(2:)
+  end
+  !
+  function fmt_realdd( x, y ) result(res)
+    real*16, intent(in)        :: x
+    character(*), intent(in)  :: y
+    character(:), allocatable :: res
+
+    character(len=30) ret
+    write ( ret, '(A,'//y//')' ) "|", x
+    res = trim(adjustL( ret ))
+    res = res(2:)
+  end
+  !
+end module logging
