@@ -1,17 +1,24 @@
-add_executable(tester)
+list(APPEND TESTERS maintest)
+list(APPEND TESTERS test_conv)
+list(APPEND TESTERS test_trim)
 
-target_include_directories(tester PUBLIC ${CMAKE_BINARY_DIR})
+foreach(TESTER IN LISTS TESTERS)
+  add_executable(${TESTER})
 
-target_sources(tester
-    PRIVATE
-    test.F90
-    )
+  target_include_directories(${TESTER} PUBLIC ${CMAKE_BINARY_DIR})
+  
+  target_sources(${TESTER}
+      PRIVATE
+      ${TESTER}.F90
+      )
 
-add_test(
-    NAME "The_test"
-    COMMAND $<TARGET_FILE:tester>
-    )
+  target_link_libraries( ${TESTER}
+      flogger
+      )
 
-target_link_libraries( tester
-    flogger
-    )
+  add_test(
+      NAME "${TESTER}"
+      COMMAND $<TARGET_FILE:${TESTER}>
+      )
+  
+endforeach()

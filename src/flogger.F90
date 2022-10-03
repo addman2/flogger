@@ -124,15 +124,15 @@ contains
     character(*) :: tp
     character(len=*) :: msg
     integer*4 :: rank
-
+    !
     if (rank.ne.0) then
         return
     end if
-
+    !
     if (.not.this%get_logcheck(tp)) then
         return
     end if
-
+    !
     print *, msg
   end subroutine Logger_log
   !
@@ -154,44 +154,51 @@ module logging
   interface operator(**)
     module procedure fmt_int, fmt_real, fmt_reald, fmt_realdd
   end interface
+  interface operator(.trm.)
+    module procedure fmt_trim
+  end interface
   !
 contains
   !
   function int2str( x, y ) result(res)
+    implicit none
     character(*), intent(in)  :: x
     integer*4, intent(in)     :: y
     character(:), allocatable :: res
-
+    !
     character(len=30) ret
     write ( ret, * ) y
     res = x // trim(adjustL( ret ))
   end
   !
   function real2str( x, y ) result(res)
+    implicit none
     character(*), intent(in)  :: x
     real*4, intent(in)        :: y
     character(:), allocatable :: res
-
+    !
     character(len=30) ret
     write ( ret, * ) y
     res = x // trim(adjustL( ret ))
   end
   !
   function reald2str( x, y ) result(res)
+    implicit none
     character(*), intent(in)  :: x
     real*8, intent(in)        :: y
     character(:), allocatable :: res
-
+    !
     character(len=30) ret
     write ( ret, * ) y
     res = x // trim(adjustL( ret ))
   end
   !
   function logical2str( x, y ) result(res)
+    implicit none
     character(*), intent(in)  :: x
     logical*4, intent(in)     :: y
     character(:), allocatable :: res
-
+    !
     character(len=30) ret
     if (y) then
       write ( ret, * ) ' True'
@@ -201,11 +208,20 @@ contains
     res = x // trim(adjustL( ret ))
   end
   !
+  function fmt_trim( x ) result(res)
+    implicit none
+    character(*), intent(in)  :: x
+    character(:), allocatable :: res
+    !
+    res = trim(adjustL( x ))
+  end
+  !
   function fmt_int( x, y ) result(res)
+    implicit none
     integer, intent(in)     :: x
     character(*), intent(in)  :: y
     character(:), allocatable :: res
-
+    !
     character(len=30) ret
     write ( ret, '(A,'//y//')' ) "|", x
     res = trim(adjustL( ret ))
@@ -213,36 +229,131 @@ contains
   end
   !
   function fmt_real( x, y ) result(res)
+    implicit none
     real*4, intent(in)        :: x
     character(*), intent(in)  :: y
     character(:), allocatable :: res
-
-    character(len=30) ret
-    write ( ret, '(A,'//y//')' ) "|", x
-    res = trim(adjustL( ret ))
-    res = res(2:)
+    !
+    real*16                   :: x_mod
+    character(len=12)         :: y_mod
+    character(len=12)         :: appendix = ""
+    character(len=30)         :: ret
+    !
+    x_mod = x
+    y_mod = y
+    !
+    call conv(x_mod, y_mod, appendix)
+    !
+    if (check_trim(y_mod)) then
+      write ( ret, '('//y_mod//',A)' ) x_mod, trim(appendix)
+      res = trim(adjustL( ret ))
+    else
+      write ( ret, '(A,'//y_mod//',A)' ) "|", x_mod, trim(appendix)
+      res = trim(adjustL( ret ))
+      res = res(2:)
+    end if
   end
   !
   function fmt_reald( x, y ) result(res)
+    implicit none
     real*8, intent(in)        :: x
     character(*), intent(in)  :: y
     character(:), allocatable :: res
-
-    character(len=30) ret
-    write ( ret, '(A,'//y//')' ) "|", x
-    res = trim(adjustL( ret ))
-    res = res(2:)
+    !
+    real*16                   :: x_mod
+    character(len=12)         :: y_mod
+    character(len=12)         :: appendix = ""
+    character(len=30)         :: ret
+    !
+    x_mod = x
+    y_mod = y
+    !
+    call conv(x_mod, y_mod, appendix)
+    !
+    if (check_trim(y_mod)) then
+      write ( ret, '('//y_mod//',A)' ) x_mod, trim(appendix)
+      res = trim(adjustL( ret ))
+    else
+      write ( ret, '(A,'//y_mod//',A)' ) "|", x_mod, trim(appendix)
+      res = trim(adjustL( ret ))
+      res = res(2:)
+    end if
   end
   !
   function fmt_realdd( x, y ) result(res)
-    real*16, intent(in)        :: x
+    implicit none
+    real*16, intent(in)       :: x
     character(*), intent(in)  :: y
     character(:), allocatable :: res
-
-    character(len=30) ret
-    write ( ret, '(A,'//y//')' ) "|", x
-    res = trim(adjustL( ret ))
-    res = res(2:)
+    !
+    real*16                   :: x_mod
+    character(len=12)         :: y_mod
+    character(len=12)         :: appendix = ""
+    character(len=30)         :: ret
+    !
+    x_mod = x
+    y_mod = y
+    !
+    call conv(x_mod, y_mod, appendix)
+    !
+    if (check_trim(y_mod)) then
+      write ( ret, '('//y_mod//',A)' ) x_mod, trim(appendix)
+      res = trim(adjustL( ret ))
+    else
+      write ( ret, '(A,'//y_mod//',A)' ) "|", x_mod, trim(appendix)
+      res = trim(adjustL( ret ))
+      res = res(2:)
+    end if
+  end
+  !
+  function check_trim( x ) result(res)
+    implicit none
+    character(*), intent(inout)  :: x
+    logical                      :: res
+    !
+    integer*4 :: ii
+    !
+    res = .False.
+    do ii = 1, len(x)
+      if (x(ii:ii).eq."@") then
+        x = trim(x(1:ii-1)) // trim(x(ii+1:len(x)))
+        res = .True.
+        return
+      end if
+    end do
+  end
+  !
+  subroutine conv( x, operand, appendix )
+    implicit none
+    real*16, intent(inout)          :: x
+    character(len=*), intent(inout) :: operand, appendix
+    character(len=12)               :: conversion, tmp
+    integer*4                       :: ii, endop
+    conversion = ""
+    !
+    if (operand(1:1).ne."!") then
+      return
+    end if
+    !
+    ii = 2
+    do ii = 2, 12
+      if (operand(ii:ii).eq."!") then
+        endop = ii
+      end if
+    end do
+    !
+    conversion = operand(2:endop-1)
+    tmp = operand(endop+1:len(operand))
+    operand = tmp
+    !
+    select case (trim(conversion))
+     case("H2eV")
+       x = x * 27.211386245988
+       appendix = " eV"
+     case("B2Ang")
+       x = x * 0.529177249
+       appendix = " Ang"
+    end select
   end
   !
 end module logging
