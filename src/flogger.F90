@@ -40,6 +40,10 @@ contains
     class(Logger), allocatable :: constructor
     character(len=1024), dimension(7) :: list
     !
+    ! These verbosity level can be edited
+    ! e.g. if verbosity level 11 is set it means messages with VERBOSITY_LOW and
+    ! VERBOSITY_MEDIUM will be printed
+    !
     list = [ character(len=1024) ::  "-31 : TEST"&
                                     ,"10  :       VERBOSITY_LOW "&
                                     ,"11  :       VERBOSITY_LOW VERBOSITY_MEDIUM"&

@@ -3,23 +3,24 @@ program test_logger
   ! Test suite
   use logging
   implicit none
-
+  !
   integer*4 :: ii
   character(len=6) :: animal
   logical, parameter :: T = .True.
   type(Logger) :: l
-
+  !
   animal = "Girafe"
-
+  !
   l = Logger()
   !
-  ! Setting verbosity level to 11
+  ! Setting verbosity level to 11 (messages with VERBOSITY_LOW and
+  !                                VERBOSITY_HIGH will be printed)
   !
   ! logg method has three arguments. First one specifies verbosity level.
   ! In princpile that can be done via enum. Second the message and the third one
   ! is the rank so only rank.eq.0 will show the message. For serial codes this
-  ! is un necessary and it should be always zero. Infact I can be an optional
-  ! parameters.
+  ! is unnecessary and it should be always zero. Infact I can be an optional
+  ! parameter TODO.
   !
   call l%setlvl(11)
   call l%logg("VERBOSITY_LOW", "", 0)
@@ -82,10 +83,10 @@ program test_logger
   call l%logg("VERBOSITY_LOW", "", 0)
   call l%logg("VERBOSITY_LOW", "====================================", 0)
   call l%logg("VERBOSITY_LOW", "", 0)
-
+  !
   call l%logg("VERBOSITY_LOW", "Here goes some internal things", 0)
   call l%logg("VERBOSITY_LOW", "", 0)
-
+  !
   do ii = 1, 3
     print *, "My log level is ", l%loglevels(ii)
     print *, "My keyword is ", l%logkeywords(ii)
