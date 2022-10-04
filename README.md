@@ -4,7 +4,7 @@ Yet another Fortran logger, this one is light weight and goes with formating
 
 Few examples here:
 
-In order to make flogger work, one has to load module, initilize constructor and set logging level. Verbosity level in this example is set to 11 (messages with VERBOSITY_LOW and VERBOSITY_HIGH will be printed)
+In order to make flogger work, one has to load module, initilize constructor and set logging level. Verbosity level in this example is set to 11 (messages with `VERBOSITY_LOW` and `VERBOSITY_HIGH` will be printed)
  
 ```
   use logging
@@ -50,7 +50,7 @@ This code will produce following output:
  I have 5 friends
 ```
 
-One can format output by specifying **'ftm'. fmt should have the same format as one would use in write (5,'fmt').
+One can format output by specifying `**'fmt'`. `fmt` should have the same format as one would use in `write (5,'fmt')`.
 
 ```
   call l%logg("VERBOSITY_LOW", "The total run time is "// 5.1234567&
