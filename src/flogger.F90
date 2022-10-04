@@ -127,14 +127,16 @@ contains
     class(Logger), intent(in) :: this
     character(*) :: tp
     character(len=*) :: msg
-    integer*4 :: rank
+    integer*4, optional :: rank
     !
-    if (rank.ne.0) then
+    if (present(rank)) then
+      if (rank.ne.0) then
         return
+      end if
     end if
     !
     if (.not.this%get_logcheck(tp)) then
-        return
+      return
     end if
     !
     print *, msg

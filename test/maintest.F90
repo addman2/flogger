@@ -19,14 +19,13 @@ program test_logger
   ! logg method has three arguments. First one specifies verbosity level.
   ! In princpile that can be done via enum. Second the message and the third one
   ! is the rank so only rank.eq.0 will show the message. For serial codes this
-  ! is unnecessary and it should be always zero. Infact I can be an optional
-  ! parameter TODO.
+  ! is unnecessary one can ommit this parameter, or alway set to zero.
   !
   call l%setlvl(11)
-  call l%logg("VERBOSITY_LOW", "", 0)
-  call l%logg("VERBOSITY_LOW", "Hello this is a cool software suite!", 0)
-  call l%logg("VERBOSITY_LOW", "", 0)
-  call l%logg("VERBOSITY_LOW", "====================================", 0)
+  call l%logg("VERBOSITY_LOW", "")
+  call l%logg("VERBOSITY_LOW", "Hello this is a cool software suite!", rank=0)
+  call l%logg("VERBOSITY_LOW", "", rank = 0)
+  call l%logg("VERBOSITY_LOW", "====================================")
   call l%logg("VERBOSITY_LOW", "", 0)
   call l%logg("VERBOSITY_LOW", "It is for logging and formating outputs,&
                               & here are some examples:", 0)
