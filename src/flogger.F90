@@ -2,15 +2,25 @@ module class_Logger
   implicit none
   private
   !
+  ! Type Handler
+  type, private :: Handler
+    character(len=64) :: verbosity
+    integer*4 :: outunit
+    integer*4 :: outtype
+  end type Handler
+  !
   ! Class Logger
   type, public :: Logger
      integer*4 :: loglvl = 0
      integer*4, allocatable, dimension(:) :: loglevels
      character(len=64), allocatable, dimension(:) :: logkeywords
+     type(handler), allocatable, dimension(:) :: handlers
   contains
      procedure, public  :: logg          => Logger_log
+     procedure, public  :: add_handler   => Logger_addh
      procedure, public  :: setlvl        => Logger_setlvl
      procedure, public  :: get_logcheck  => Loggerp_check
+     procedure, public  :: prnt          => Logger_print
   end type Logger
   !
   interface get_logcheck
@@ -53,6 +63,12 @@ contains
                                     ,"1112: DEBUG VERBOSITY_LOW VERBOSITY_MEDIUM VERBOSITY_HIGH TIME"]
     allocate(constructor)
     !
+    ! Allocate default handler
+    allocate(constructor%handlers(1))
+    constructor%handlers(1)%verbosity = ""
+    constructor%handlers(1)%outunit = 6
+    constructor%handlers(1)%outtype = 0
+    !
     call get_loglevels(list, size(list), constructor%loglevels)
     call get_logkeywords(list, size(list), constructor%logkeywords)
     !
@@ -87,6 +103,31 @@ contains
       logkeywords(ii) = list(ii)(ind+1:)
     end do
   end subroutine Loggerp_get_logkeywords
+  !
+  subroutine Logger_addh(this, verbosity, outunit, outtype)
+    implicit none
+    class(Logger), intent(inout) :: this
+    character(len=64), intent(in) :: verbosity
+    integer*4, intent(in) :: outunit, outtype
+    type(handler), allocatable, dimension(:) :: tmp_handlers
+    integer*4 :: ii
+    !
+    if (.not.allocated(this%handlers)) then
+      allocate(this%handlers(1))
+    else
+      allocate(tmp_handlers(size(this%handlers)))
+      tmp_handlers(:) = this%handlers(:)
+      deallocate(this%handlers)
+      allocate(this%handlers(size(tmp_handlers)+1))
+      do ii = 1, size(tmp_handlers)
+        this%handlers(ii) = tmp_handlers(ii)
+      end do
+    end if
+    !
+    this%handlers(size(this%handlers))%verbosity = verbosity
+    this%handlers(size(this%handlers))%outunit = outunit
+    this%handlers(size(this%handlers))%outtype = outtype
+  end subroutine Logger_addh
   !
   function Loggerp_check(this, tp) result(answer)
     implicit none
@@ -128,6 +169,7 @@ contains
     character(*) :: tp
     character(len=*) :: msg
     integer*4, optional :: rank
+    integer*4 :: ii
     !
     if (present(rank)) then
       if (rank.ne.0) then
@@ -139,8 +181,21 @@ contains
       return
     end if
     !
-    print *, msg
+    do ii = 1, size(this%handlers)
+      call this%prnt(this%handlers(ii), msg)
+    end do
   end subroutine Logger_log
+  !
+  subroutine Logger_print(this, h, msg)
+    implicit none
+    class(Logger), intent(in) :: this
+    type(Handler), intent(in) :: h
+    character(len=*) :: msg
+    !
+    if (trim(h%verbosity).eq."") then
+      write (h%outunit, *) msg
+    end if
+  end subroutine Logger_print
   !
   subroutine Logger_setlvl(this, lvl)
     ! Log level setter
