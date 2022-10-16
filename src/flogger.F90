@@ -64,10 +64,7 @@ contains
     allocate(constructor)
     !
     ! Allocate default handler
-    allocate(constructor%handlers(1))
-    constructor%handlers(1)%verbosity = ""
-    constructor%handlers(1)%outunit = 6
-    constructor%handlers(1)%outtype = 0
+    call constructor%add_handler("", 6, 0)
     !
     call get_loglevels(list, size(list), constructor%loglevels)
     call get_logkeywords(list, size(list), constructor%logkeywords)
