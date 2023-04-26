@@ -7,6 +7,7 @@ module class_Logger
     character(len=64) :: verbosity
     integer*4 :: outunit
     integer*4 :: outtype
+    character(len=512) :: outname
   end type Handler
   !
   ! Class Logger
@@ -124,6 +125,7 @@ contains
     this%handlers(size(this%handlers))%verbosity = verbosity
     this%handlers(size(this%handlers))%outunit = outunit
     this%handlers(size(this%handlers))%outtype = outtype
+    this%handlers(size(this%handlers))%outname = ""
   end subroutine Logger_addh
   !
   function Loggerp_check(this, tp) result(answer)
