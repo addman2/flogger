@@ -2,9 +2,11 @@ module class_Logger
   implicit none
   private
   !
+  integer*4, parameter :: VERB_LENGTH = 64
+  !
   ! Type Handler
   type, private :: Handler
-    character(len=64) :: verbosity
+    character(len=VERB_LENGTH) :: verbosity
     integer*4 :: outunit
     integer*4 :: outtype
     character(len=512) :: outname
@@ -14,7 +16,7 @@ module class_Logger
   type, public :: Logger
      integer*4 :: loglvl = 0
      integer*4, allocatable, dimension(:) :: loglevels
-     character(len=64), allocatable, dimension(:) :: logkeywords
+     character(len=VERB_LENGTH), allocatable, dimension(:) :: logkeywords
      type(handler), allocatable, dimension(:) :: handlers
   contains
      procedure, public  :: logg          => Logger_log
@@ -65,7 +67,7 @@ contains
     allocate(constructor)
     !
     ! Allocate default handler
-    call constructor%add_handler("", 6, 0)
+    call constructor%add_handler("", 6, 0, "")
     !
     call get_loglevels(list, size(list), constructor%loglevels)
     call get_logkeywords(list, size(list), constructor%logkeywords)
@@ -90,7 +92,7 @@ contains
   !
   subroutine Loggerp_get_logkeywords(list, n, logkeywords)
     implicit none
-    character(len=64), allocatable, dimension(:), intent(out) :: logkeywords
+    character(len=VERB_LENGTH), allocatable, dimension(:), intent(out) :: logkeywords
     integer*4, intent(in) :: n
     character(len=1024), dimension(n), intent(in) :: list
     integer :: ii, ind
@@ -102,10 +104,11 @@ contains
     end do
   end subroutine Loggerp_get_logkeywords
   !
-  subroutine Logger_addh(this, verbosity, outunit, outtype)
+  subroutine Logger_addh(this, verbosity, outunit, outtype, outname)
     implicit none
     class(Logger), intent(inout) :: this
-    character(len=64), intent(in) :: verbosity
+    character(len=VERB_LENGTH), intent(in) :: verbosity
+    character(len=512), intent(in) :: outname
     integer*4, intent(in) :: outunit, outtype
     type(handler), allocatable, dimension(:) :: tmp_handlers
     integer*4 :: ii
