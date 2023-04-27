@@ -1,6 +1,7 @@
 list(APPEND TESTERS maintest)
 list(APPEND TESTERS test_conv)
 list(APPEND TESTERS test_trim)
+list(APPEND TESTERS test_err)
 
 foreach(TESTER IN LISTS TESTERS)
   add_executable(${TESTER})
