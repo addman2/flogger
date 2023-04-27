@@ -3,27 +3,28 @@ module class_Logger
   private
   !
   integer*4, parameter :: VERB_LENGTH = 64
+  integer*4, parameter :: FILE_PATH_LENGTH = 512
   !
   ! Type Handler
   type, private :: Handler
     character(len=VERB_LENGTH) :: verbosity
     integer*4 :: outunit
     integer*4 :: outtype
-    character(len=512) :: outname
+    character(len=FILE_PATH_LENGTH) :: outname
   end type Handler
   !
   ! Class Logger
   type, public :: Logger
-     integer*4 :: loglvl = 0
-     integer*4, allocatable, dimension(:) :: loglevels
-     character(len=VERB_LENGTH), allocatable, dimension(:) :: logkeywords
-     type(handler), allocatable, dimension(:) :: handlers
+    integer*4 :: loglvl = 0
+    integer*4, allocatable, dimension(:) :: loglevels
+    character(len=VERB_LENGTH), allocatable, dimension(:) :: logkeywords
+    type(handler), allocatable, dimension(:) :: handlers
   contains
-     procedure, public  :: logg          => Logger_log
-     procedure, public  :: add_handler   => Logger_addh
-     procedure, public  :: setlvl        => Logger_setlvl
-     procedure, public  :: get_logcheck  => Loggerp_check
-     procedure, public  :: prnt          => Logger_print
+    procedure, public  :: logg          => Logger_log
+    procedure, public  :: add_handler   => Logger_addh
+    procedure, public  :: setlvl        => Logger_setlvl
+    procedure, public  :: get_logcheck  => Loggerp_check
+    procedure, public  :: prnt          => Logger_print
   end type Logger
   !
   interface get_logcheck
@@ -52,22 +53,26 @@ contains
     !
     class(Logger), allocatable :: constructor
     character(len=1024), dimension(7) :: list
+    character(len=VERB_LENGTH) :: verbosity
     !
     ! These verbosity level can be edited
     ! e.g. if verbosity level 11 is set it means messages with VERBOSITY_LOW and
     ! VERBOSITY_MEDIUM will be printed
     !
     list = [ character(len=1024) ::  "-31 : TEST"&
-                                    ,"10  :       VERBOSITY_LOW "&
-                                    ,"11  :       VERBOSITY_LOW VERBOSITY_MEDIUM"&
-                                    ,"12  :       VERBOSITY_LOW VERBOSITY_MEDIUM VERBOSITY_HIGH"&
-                                    ,"112 : DEBUG VERBOSITY_LOW VERBOSITY_MEDIUM VERBOSITY_HIGH"&
-                                    ,"1012:       VERBOSITY_LOW VERBOSITY_MEDIUM VERBOSITY_HIGH TIME"&
-                                    ,"1112: DEBUG VERBOSITY_LOW VERBOSITY_MEDIUM VERBOSITY_HIGH TIME"]
+                                    ,"10  :       ERROR VERBOSITY_LOW "&
+                                    ,"11  :       ERROR VERBOSITY_LOW VERBOSITY_MEDIUM"&
+                                    ,"12  :       ERROR VERBOSITY_LOW VERBOSITY_MEDIUM VERBOSITY_HIGH"&
+                                    ,"112 : DEBUG ERROR VERBOSITY_LOW VERBOSITY_MEDIUM VERBOSITY_HIGH"&
+                                    ,"1012:       ERROR VERBOSITY_LOW VERBOSITY_MEDIUM VERBOSITY_HIGH TIME"&
+                                    ,"1112: DEBUG ERROR VERBOSITY_LOW VERBOSITY_MEDIUM VERBOSITY_HIGH TIME"]
     allocate(constructor)
     !
-    ! Allocate default handler
-    call constructor%add_handler("", 6, 0, "")
+    ! Allocate default handlers
+    verbosity = ""
+    call constructor%add_handler(verbosity, 6, 0, "")
+    verbosity = "ERROR"
+    call constructor%add_handler(verbosity, 0, 0, "")
     !
     call get_loglevels(list, size(list), constructor%loglevels)
     call get_logkeywords(list, size(list), constructor%logkeywords)
@@ -108,7 +113,7 @@ contains
     implicit none
     class(Logger), intent(inout) :: this
     character(len=VERB_LENGTH), intent(in) :: verbosity
-    character(len=512), intent(in) :: outname
+    character(len=FILE_PATH_LENGTH), intent(in) :: outname
     integer*4, intent(in) :: outunit, outtype
     type(handler), allocatable, dimension(:) :: tmp_handlers
     integer*4 :: ii
@@ -184,17 +189,20 @@ contains
     end if
     !
     do ii = 1, size(this%handlers)
-      call this%prnt(this%handlers(ii), msg)
+      call this%prnt(this%handlers(ii), tp, msg)
     end do
   end subroutine Logger_log
   !
-  subroutine Logger_print(this, h, msg)
+  subroutine Logger_print(this, h, tp, msg)
     implicit none
     class(Logger), intent(in) :: this
     type(Handler), intent(in) :: h
     character(len=*) :: msg
+    character(len=*) :: tp
     !
-    if (trim(h%verbosity).eq."") then
+    if (trim(h%verbosity).eq.""&
+        .or.&
+        trim(h%verbosity).eq.trim(tp)) then
       write (h%outunit, *) msg
     end if
   end subroutine Logger_print
