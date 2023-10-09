@@ -1,17 +1,5 @@
 # flogger
-
-Yet another Fortran logger, this one is light weight and goes with formating
-
-Few examples here:
-
-In order to make flogger work, one has to load module, initilize constructor and set logging level. Verbosity level in this example is set to 11 (messages with `VERBOSITY_LOW` and `VERBOSITY_HIGH` will be printed)
- 
-```
-  use logging
-  type(Logger) :: l
-  l = Logger()
-  call l%setlvl(11)
-```  
+  
 
 logg method has three arguments. First one specifies verbosity level.
 In princpile that can be done via enum. Second the message and the third one
